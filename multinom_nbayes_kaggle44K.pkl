@@ -1,0 +1,1194 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "Bt2g2hJPlbrC"
+   },
+   "source": [
+    "News Fraud Detection\n",
+    "Dataset : https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset?select=True.csv"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "id": "YBcDDLNDljo_"
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import warnings\n",
+    "warnings.filterwarnings('ignore')\n",
+    "import pickle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 206
+    },
+    "id": "1OqOyvOKlqdS",
+    "outputId": "b929fbf1-c956-4989-ae4b-f732fdbdd7e5"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>title</th>\n",
+       "      <th>text</th>\n",
+       "      <th>subject</th>\n",
+       "      <th>date</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Donald Trump Sends Out Embarrassing New Yearâ...</td>\n",
+       "      <td>Donald Trump just couldn t wish all Americans ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>December 31, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Drunk Bragging Trump Staffer Started Russian ...</td>\n",
+       "      <td>House Intelligence Committee Chairman Devin Nu...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>December 31, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Sheriff David Clarke Becomes An Internet Joke...</td>\n",
+       "      <td>On Friday, it was revealed that former Milwauk...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>December 30, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Trump Is So Obsessed He Even Has Obamaâs Name...</td>\n",
+       "      <td>On Christmas day, Donald Trump announced that ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>December 29, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Pope Francis Just Called Out Donald Trump Dur...</td>\n",
+       "      <td>Pope Francis used his annual Christmas Day mes...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>December 25, 2017</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                               title  \\\n",
+       "0   Donald Trump Sends Out Embarrassing New Yearâ...   \n",
+       "1   Drunk Bragging Trump Staffer Started Russian ...   \n",
+       "2   Sheriff David Clarke Becomes An Internet Joke...   \n",
+       "3   Trump Is So Obsessed He Even Has Obamaâs Name...   \n",
+       "4   Pope Francis Just Called Out Donald Trump Dur...   \n",
+       "\n",
+       "                                                text subject  \\\n",
+       "0  Donald Trump just couldn t wish all Americans ...    News   \n",
+       "1  House Intelligence Committee Chairman Devin Nu...    News   \n",
+       "2  On Friday, it was revealed that former Milwauk...    News   \n",
+       "3  On Christmas day, Donald Trump announced that ...    News   \n",
+       "4  Pope Francis used his annual Christmas Day mes...    News   \n",
+       "\n",
+       "                date  \n",
+       "0  December 31, 2017  \n",
+       "1  December 31, 2017  \n",
+       "2  December 30, 2017  \n",
+       "3  December 29, 2017  \n",
+       "4  December 25, 2017  "
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data_fake= pd.read_csv('Fake.csv')\n",
+    "data_fake.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 206
+    },
+    "id": "Ue_CoRXGZkch",
+    "outputId": "bf6d4e9e-ffc6-480a-f17c-93152ce48906"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>title</th>\n",
+       "      <th>text</th>\n",
+       "      <th>subject</th>\n",
+       "      <th>date</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>As U.S. budget fight looms, Republicans flip t...</td>\n",
+       "      <td>WASHINGTON (Reuters) - The head of a conservat...</td>\n",
+       "      <td>politicsNews</td>\n",
+       "      <td>December 31, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>U.S. military to accept transgender recruits o...</td>\n",
+       "      <td>WASHINGTON (Reuters) - Transgender people will...</td>\n",
+       "      <td>politicsNews</td>\n",
+       "      <td>December 29, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Senior U.S. Republican senator: 'Let Mr. Muell...</td>\n",
+       "      <td>WASHINGTON (Reuters) - The special counsel inv...</td>\n",
+       "      <td>politicsNews</td>\n",
+       "      <td>December 31, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>FBI Russia probe helped by Australian diplomat...</td>\n",
+       "      <td>WASHINGTON (Reuters) - Trump campaign adviser ...</td>\n",
+       "      <td>politicsNews</td>\n",
+       "      <td>December 30, 2017</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Trump wants Postal Service to charge 'much mor...</td>\n",
+       "      <td>SEATTLE/WASHINGTON (Reuters) - President Donal...</td>\n",
+       "      <td>politicsNews</td>\n",
+       "      <td>December 29, 2017</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                               title  \\\n",
+       "0  As U.S. budget fight looms, Republicans flip t...   \n",
+       "1  U.S. military to accept transgender recruits o...   \n",
+       "2  Senior U.S. Republican senator: 'Let Mr. Muell...   \n",
+       "3  FBI Russia probe helped by Australian diplomat...   \n",
+       "4  Trump wants Postal Service to charge 'much mor...   \n",
+       "\n",
+       "                                                text       subject  \\\n",
+       "0  WASHINGTON (Reuters) - The head of a conservat...  politicsNews   \n",
+       "1  WASHINGTON (Reuters) - Transgender people will...  politicsNews   \n",
+       "2  WASHINGTON (Reuters) - The special counsel inv...  politicsNews   \n",
+       "3  WASHINGTON (Reuters) - Trump campaign adviser ...  politicsNews   \n",
+       "4  SEATTLE/WASHINGTON (Reuters) - President Donal...  politicsNews   \n",
+       "\n",
+       "                 date  \n",
+       "0  December 31, 2017   \n",
+       "1  December 29, 2017   \n",
+       "2  December 31, 2017   \n",
+       "3  December 30, 2017   \n",
+       "4  December 29, 2017   "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data_true= pd.read_csv('True.csv')\n",
+    "data_true.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "id": "kdqsRoy7Zm06"
+   },
+   "outputs": [],
+   "source": [
+    "data_fake.drop(['date'],axis=1,inplace=True)\n",
+    "data_true.drop(['date'],axis=1,inplace=True)\n",
+    "\n",
+    "# labeling The dataset\n",
+    "data_fake['label'] = 0\n",
+    "data_true['label'] = 1\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 206
+    },
+    "id": "6ZbA6WdvZnQL",
+    "outputId": "18cac421-b44d-4a94-9a5e-f07cad232280"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>title</th>\n",
+       "      <th>text</th>\n",
+       "      <th>subject</th>\n",
+       "      <th>label</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Donald Trump Sends Out Embarrassing New Yearâ...</td>\n",
+       "      <td>Donald Trump just couldn t wish all Americans ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Drunk Bragging Trump Staffer Started Russian ...</td>\n",
+       "      <td>House Intelligence Committee Chairman Devin Nu...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Sheriff David Clarke Becomes An Internet Joke...</td>\n",
+       "      <td>On Friday, it was revealed that former Milwauk...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Trump Is So Obsessed He Even Has Obamaâs Name...</td>\n",
+       "      <td>On Christmas day, Donald Trump announced that ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Pope Francis Just Called Out Donald Trump Dur...</td>\n",
+       "      <td>Pope Francis used his annual Christmas Day mes...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                               title  \\\n",
+       "0   Donald Trump Sends Out Embarrassing New Yearâ...   \n",
+       "1   Drunk Bragging Trump Staffer Started Russian ...   \n",
+       "2   Sheriff David Clarke Becomes An Internet Joke...   \n",
+       "3   Trump Is So Obsessed He Even Has Obamaâs Name...   \n",
+       "4   Pope Francis Just Called Out Donald Trump Dur...   \n",
+       "\n",
+       "                                                text subject  label  \n",
+       "0  Donald Trump just couldn t wish all Americans ...    News      0  \n",
+       "1  House Intelligence Committee Chairman Devin Nu...    News      0  \n",
+       "2  On Friday, it was revealed that former Milwauk...    News      0  \n",
+       "3  On Christmas day, Donald Trump announced that ...    News      0  \n",
+       "4  Pope Francis used his annual Christmas Day mes...    News      0  "
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Concatenate datasets\n",
+    "data = pd.concat([data_fake, data_true],ignore_index=True,sort=False)\n",
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "id": "4pByzqlMVkO4"
+   },
+   "outputs": [],
+   "source": [
+    "#from google.colab import drive\n",
+    "#drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "XiJ2jrVolt3z",
+    "outputId": "32c13e7e-5292-4f43-8284-743083fdeec2"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(44898, 4)"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "id": "iWGct1E8mB4W"
+   },
+   "outputs": [],
+   "source": [
+    "#Remove a dependent feature \n",
+    "X =data.drop('label',axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 206
+    },
+    "id": "XJmknDtYmDvV",
+    "outputId": "327ce893-06b6-419b-ab22-bc440661ce1e"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>title</th>\n",
+       "      <th>text</th>\n",
+       "      <th>subject</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Donald Trump Sends Out Embarrassing New Yearâ...</td>\n",
+       "      <td>Donald Trump just couldn t wish all Americans ...</td>\n",
+       "      <td>News</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Drunk Bragging Trump Staffer Started Russian ...</td>\n",
+       "      <td>House Intelligence Committee Chairman Devin Nu...</td>\n",
+       "      <td>News</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Sheriff David Clarke Becomes An Internet Joke...</td>\n",
+       "      <td>On Friday, it was revealed that former Milwauk...</td>\n",
+       "      <td>News</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Trump Is So Obsessed He Even Has Obamaâs Name...</td>\n",
+       "      <td>On Christmas day, Donald Trump announced that ...</td>\n",
+       "      <td>News</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Pope Francis Just Called Out Donald Trump Dur...</td>\n",
+       "      <td>Pope Francis used his annual Christmas Day mes...</td>\n",
+       "      <td>News</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                               title  \\\n",
+       "0   Donald Trump Sends Out Embarrassing New Yearâ...   \n",
+       "1   Drunk Bragging Trump Staffer Started Russian ...   \n",
+       "2   Sheriff David Clarke Becomes An Internet Joke...   \n",
+       "3   Trump Is So Obsessed He Even Has Obamaâs Name...   \n",
+       "4   Pope Francis Just Called Out Donald Trump Dur...   \n",
+       "\n",
+       "                                                text subject  \n",
+       "0  Donald Trump just couldn t wish all Americans ...    News  \n",
+       "1  House Intelligence Committee Chairman Devin Nu...    News  \n",
+       "2  On Friday, it was revealed that former Milwauk...    News  \n",
+       "3  On Christmas day, Donald Trump announced that ...    News  \n",
+       "4  Pope Francis used his annual Christmas Day mes...    News  "
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "xzhgaVrZerFZ",
+    "outputId": "4087425f-9d08-4081-e56f-6e49439d4196"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(44898, 3)"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "id": "hxWZLGLAmIE1"
+   },
+   "outputs": [],
+   "source": [
+    "# Get a dependent feature\n",
+    "y = data['label']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "t0KzfbXzmK_H",
+    "outputId": "72a8d3be-b6b1-41f9-bc5f-bee142e1cee3"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "title      0\n",
+       "text       0\n",
+       "subject    0\n",
+       "label      0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#Checking Null Values\n",
+    "data.isna().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "tUDSZSQmmQ7R",
+    "outputId": "4253e621-58cf-45f3-d22e-adf1ec8be636"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(44898, 4)"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 206
+    },
+    "id": "nhXLRW58mThF",
+    "outputId": "97b0b03a-801a-4499-a24e-919cac615f34"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>title</th>\n",
+       "      <th>text</th>\n",
+       "      <th>subject</th>\n",
+       "      <th>label</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Donald Trump Sends Out Embarrassing New Yearâ...</td>\n",
+       "      <td>Donald Trump just couldn t wish all Americans ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Drunk Bragging Trump Staffer Started Russian ...</td>\n",
+       "      <td>House Intelligence Committee Chairman Devin Nu...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Sheriff David Clarke Becomes An Internet Joke...</td>\n",
+       "      <td>On Friday, it was revealed that former Milwauk...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Trump Is So Obsessed He Even Has Obamaâs Name...</td>\n",
+       "      <td>On Christmas day, Donald Trump announced that ...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Pope Francis Just Called Out Donald Trump Dur...</td>\n",
+       "      <td>Pope Francis used his annual Christmas Day mes...</td>\n",
+       "      <td>News</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                               title  \\\n",
+       "0   Donald Trump Sends Out Embarrassing New Yearâ...   \n",
+       "1   Drunk Bragging Trump Staffer Started Russian ...   \n",
+       "2   Sheriff David Clarke Becomes An Internet Joke...   \n",
+       "3   Trump Is So Obsessed He Even Has Obamaâs Name...   \n",
+       "4   Pope Francis Just Called Out Donald Trump Dur...   \n",
+       "\n",
+       "                                                text subject  label  \n",
+       "0  Donald Trump just couldn t wish all Americans ...    News      0  \n",
+       "1  House Intelligence Committee Chairman Devin Nu...    News      0  \n",
+       "2  On Friday, it was revealed that former Milwauk...    News      0  \n",
+       "3  On Christmas day, Donald Trump announced that ...    News      0  \n",
+       "4  Pope Francis used his annual Christmas Day mes...    News      0  "
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "JbmMHx2lmega"
+   },
+   "source": [
+    "# Data Preprocessing "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "id": "aFnBgwmDmuGM"
+   },
+   "outputs": [],
+   "source": [
+    "import nltk"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "6gPuyMjvmy8p",
+    "outputId": "3b3d4cf4-2ea6-4b8c-b08c-3510cddaa49d"
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "[nltk_data] Downloading package stopwords to\n",
+      "[nltk_data]     /Users/shyamadhikari/nltk_data...\n",
+      "[nltk_data]   Package stopwords is already up-to-date!\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "nltk.download('stopwords')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "id": "fnO_ddLCmjxC"
+   },
+   "outputs": [],
+   "source": [
+    "from nltk.corpus import stopwords  #Removal of Stopwords\n",
+    "from nltk.stem.porter import PorterStemmer #Stemming Purpose\n",
+    "import re\n",
+    "ps = PorterStemmer()\n",
+    "lines = []\n",
+    "for i in range(0,len(data)):\n",
+    "    review = re.sub('[^a-zA-Z]', ' ', data['title'][i])\n",
+    "    review = review.lower()\n",
+    "    review = review.split()\n",
+    "    \n",
+    "    review = [ps.stem(word) for word in review if not word in stopwords.words('english')]\n",
+    "    review = ' '.join(review)\n",
+    "    lines.append(review)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "iwXVuJLsnEJx",
+    "outputId": "0f276293-3ced-45c2-c085-8a9802191261"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['donald trump send embarrass new year eve messag disturb',\n",
+       " 'drunk brag trump staffer start russian collus investig',\n",
+       " 'sheriff david clark becom internet joke threaten poke peopl eye',\n",
+       " 'trump obsess even obama name code websit imag',\n",
+       " 'pope franci call donald trump christma speech',\n",
+       " 'racist alabama cop brutal black boy handcuff graphic imag',\n",
+       " 'fresh golf cours trump lash fbi deputi director jame comey',\n",
+       " 'trump said insan racist stuff insid oval offic wit back',\n",
+       " 'former cia director slam trump un bulli openli suggest act like dictat tweet',\n",
+       " 'watch brand new pro trump ad featur much kiss make sick']"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "lines[:10]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "id": "xroCo3x9nI66"
+   },
+   "outputs": [],
+   "source": [
+    "# Applying CountVectorizer\n",
+    "# Creating Bag of Words Model\n",
+    "from sklearn.feature_extraction.text import CountVectorizer\n",
+    "cv = CountVectorizer(max_features =5000, ngram_range=(1,3))\n",
+    "X=cv.fit_transform(lines).toarray()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "KNBTXJM3nMgz",
+    "outputId": "50274dff-704a-4716-dad0-147e5e93b10d"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(44898, 5000)"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Independent features shape\n",
+    "X.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "id": "XRAKARS3nPIm"
+   },
+   "outputs": [],
+   "source": [
+    "y = data['label']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "uzMnqu8pdUKg",
+    "outputId": "9cda8955-1c0a-45af-d2e3-8ad90f457cf4"
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(44898,)"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "y.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "id": "BiOa073gnSGW"
+   },
+   "outputs": [],
+   "source": [
+    "# Dividing the dataset into Training & Testing data\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X,y,test_size = 0.33, random_state=0,shuffle=True )\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "f_wu0lqSnmqb"
+   },
+   "source": [
+    "# Modeling "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "c1za43hmnvu5"
+   },
+   "source": [
+    " Multinomial Naives Bayes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "id": "xQthZxp3nztY"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn import metrics\n",
+    "import numpy as np\n",
+    "import itertools\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "sVTmV-MYE4o_"
+   },
+   "source": [
+    "5-fold cross-validation and created a Multinomial Naive Bayes algorithm"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "tfRFuX4HE4Sl",
+    "outputId": "df553340-ad2b-4f77-f5d7-b8bd8267aaf7"
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Fitting 5 folds for each of 20 candidates, totalling 100 fits\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"â¸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"â¾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>GridSearchCV(cv=5, estimator=MultinomialNB(), n_jobs=-1,\n",
+       "             param_grid={&#x27;alpha&#x27;: [0.01, 0.1, 0.5, 1.0, 10.0],\n",
+       "                         &#x27;class_prior&#x27;: [None, [0.1, 0.1]],\n",
+       "                         &#x27;fit_prior&#x27;: [True, False]},\n",
+       "             verbose=5)</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item sk-dashed-wrapped\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" ><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">GridSearchCV</label><div class=\"sk-toggleable__content\"><pre>GridSearchCV(cv=5, estimator=MultinomialNB(), n_jobs=-1,\n",
+       "             param_grid={&#x27;alpha&#x27;: [0.01, 0.1, 0.5, 1.0, 10.0],\n",
+       "                         &#x27;class_prior&#x27;: [None, [0.1, 0.1]],\n",
+       "                         &#x27;fit_prior&#x27;: [True, False]},\n",
+       "             verbose=5)</pre></div></div></div><div class=\"sk-parallel\"><div class=\"sk-parallel-item\"><div class=\"sk-item\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-2\" type=\"checkbox\" ><label for=\"sk-estimator-id-2\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">estimator: MultinomialNB</label><div class=\"sk-toggleable__content\"><pre>MultinomialNB()</pre></div></div></div><div class=\"sk-serial\"><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-3\" type=\"checkbox\" ><label for=\"sk-estimator-id-3\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">MultinomialNB</label><div class=\"sk-toggleable__content\"><pre>MultinomialNB()</pre></div></div></div></div></div></div></div></div></div></div>"
+      ],
+      "text/plain": [
+       "GridSearchCV(cv=5, estimator=MultinomialNB(), n_jobs=-1,\n",
+       "             param_grid={'alpha': [0.01, 0.1, 0.5, 1.0, 10.0],\n",
+       "                         'class_prior': [None, [0.1, 0.1]],\n",
+       "                         'fit_prior': [True, False]},\n",
+       "             verbose=5)"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.naive_bayes import MultinomialNB\n",
+    "\n",
+    "from sklearn.model_selection import GridSearchCV\n",
+    "\n",
+    "n_classes= np.unique(y)\n",
+    "params = {'alpha': [0.01, 0.1, 0.5, 1.0, 10.0],\n",
+    "          'fit_prior': [True, False],\n",
+    "          'class_prior': [None, [0.1,]* len(n_classes), ],\n",
+    "         }\n",
+    "\n",
+    "model= GridSearchCV(MultinomialNB(), param_grid=params, n_jobs=-1, cv=5, verbose=5)\n",
+    "model.fit(X_train,y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Save the model with Pickle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[CV 2/5] END alpha=0.01, class_prior=None, fit_prior=False;, score=0.924 total time=  14.2s\n",
+      "[CV 1/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=True;, score=0.924 total time=  10.0s\n",
+      "[CV 5/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=False;, score=0.930 total time=   9.9s\n",
+      "[CV 3/5] END alpha=0.1, class_prior=None, fit_prior=False;, score=0.932 total time=  10.1s\n",
+      "[CV 2/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=False;, score=0.926 total time=  10.2s\n",
+      "[CV 5/5] END alpha=0.5, class_prior=None, fit_prior=True;, score=0.931 total time=   9.8s\n",
+      "[CV 4/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=True;, score=0.933 total time=   6.2s\n",
+      "[CV 1/5] END alpha=1.0, class_prior=None, fit_prior=True;, score=0.924 total time=   8.1s\n",
+      "[CV 5/5] END alpha=1.0, class_prior=None, fit_prior=False;, score=0.930 total time=  10.9s\n",
+      "[CV 4/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.933 total time=   9.4s\n",
+      "[CV 1/5] END alpha=10.0, class_prior=None, fit_prior=False;, score=0.922 total time=  12.4s\n",
+      "[CV 4/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.930 total time=   5.1s\n",
+      "[CV 1/5] END alpha=0.01, class_prior=None, fit_prior=True;, score=0.923 total time=  14.3s\n",
+      "[CV 4/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=True;, score=0.931 total time=  10.0s\n",
+      "[CV 1/5] END alpha=0.1, class_prior=None, fit_prior=True;, score=0.924 total time=   9.9s\n",
+      "[CV 5/5] END alpha=0.1, class_prior=None, fit_prior=False;, score=0.932 total time=  10.3s\n",
+      "[CV 3/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=False;, score=0.932 total time=  10.6s\n",
+      "[CV 1/5] END alpha=0.5, class_prior=None, fit_prior=False;, score=0.925 total time=   7.9s\n",
+      "[CV 2/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=   7.4s\n",
+      "[CV 5/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=False;, score=0.931 total time=   8.2s\n",
+      "[CV 3/5] END alpha=1.0, class_prior=None, fit_prior=False;, score=0.932 total time=   9.8s\n",
+      "[CV 1/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=  10.4s\n",
+      "[CV 5/5] END alpha=10.0, class_prior=None, fit_prior=True;, score=0.921 total time=  12.4s\n",
+      "[CV 3/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=   6.9s\n",
+      "[CV 1/5] END alpha=0.01, class_prior=None, fit_prior=False;, score=0.924 total time=  14.2s\n",
+      "[CV 2/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=True;, score=0.924 total time=  10.0s\n",
+      "[CV 4/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=False;, score=0.931 total time=   9.3s\n",
+      "[CV 2/5] END alpha=0.1, class_prior=None, fit_prior=False;, score=0.926 total time=  10.4s\n",
+      "[CV 5/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=True;, score=0.932 total time=   7.9s\n",
+      "[CV 3/5] END alpha=0.5, class_prior=None, fit_prior=True;, score=0.932 total time=  10.0s\n",
+      "[CV 1/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=   8.7s\n",
+      "[CV 2/5] END alpha=1.0, class_prior=None, fit_prior=True;, score=0.925 total time=   8.0s\n",
+      "[CV 4/5] END alpha=1.0, class_prior=None, fit_prior=False;, score=0.933 total time=  10.9s\n",
+      "[CV 3/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.932 total time=   9.3s\n",
+      "[CV 4/5] END alpha=10.0, class_prior=None, fit_prior=True;, score=0.928 total time=  12.5s\n",
+      "[CV 5/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.922 total time=   6.9s\n",
+      "[CV 2/5] END alpha=0.01, class_prior=None, fit_prior=True;, score=0.923 total time=  14.3s\n",
+      "[CV 3/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=True;, score=0.933 total time=  10.0s\n",
+      "[CV 2/5] END alpha=0.1, class_prior=None, fit_prior=True;, score=0.925 total time=  10.0s\n",
+      "[CV 1/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=  11.6s\n",
+      "[CV 4/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=False;, score=0.932 total time=  11.7s\n",
+      "[CV 2/5] END alpha=0.5, class_prior=None, fit_prior=False;, score=0.925 total time=   8.5s\n",
+      "[CV 5/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=True;, score=0.931 total time=   8.1s\n",
+      "[CV 5/5] END alpha=1.0, class_prior=None, fit_prior=True;, score=0.929 total time=   8.8s\n",
+      "[CV 2/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=   8.4s\n",
+      "[CV 5/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.930 total time=  10.1s\n",
+      "[CV 4/5] END alpha=10.0, class_prior=None, fit_prior=False;, score=0.930 total time=  11.8s\n",
+      "[CV 3/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=   5.2s\n",
+      "[CV 4/5] END alpha=0.01, class_prior=None, fit_prior=True;, score=0.931 total time=  14.1s\n",
+      "[CV 5/5] END alpha=0.01, class_prior=None, fit_prior=False;, score=0.930 total time=   8.9s\n",
+      "[CV 3/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=False;, score=0.933 total time=   2.7s\n",
+      "[CV 5/5] END alpha=0.1, class_prior=None, fit_prior=True;, score=0.930 total time=  10.3s\n",
+      "[CV 4/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=True;, score=0.932 total time=  10.1s\n",
+      "[CV 1/5] END alpha=0.5, class_prior=None, fit_prior=True;, score=0.924 total time=  11.4s\n",
+      "[CV 4/5] END alpha=0.5, class_prior=None, fit_prior=False;, score=0.933 total time=  10.0s\n",
+      "[CV 2/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=   6.3s\n",
+      "[CV 4/5] END alpha=1.0, class_prior=None, fit_prior=True;, score=0.932 total time=   7.6s\n",
+      "[CV 1/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.925 total time=   5.0s\n",
+      "[CV 5/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.930 total time=   4.6s\n",
+      "[CV 2/5] END alpha=10.0, class_prior=None, fit_prior=True;, score=0.924 total time=  10.0s\n",
+      "[CV 3/5] END alpha=10.0, class_prior=None, fit_prior=False;, score=0.925 total time=  11.6s\n",
+      "[CV 1/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.922 total time=   5.6s\n",
+      "[CV 3/5] END alpha=0.01, class_prior=None, fit_prior=False;, score=0.933 total time=  14.3s\n",
+      "[CV 1/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=False;, score=0.924 total time=  10.0s\n",
+      "[CV 4/5] END alpha=0.1, class_prior=None, fit_prior=True;, score=0.933 total time=  10.0s\n",
+      "[CV 2/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=True;, score=0.926 total time=  11.6s\n",
+      "[CV 5/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=False;, score=0.932 total time=  11.7s\n",
+      "[CV 3/5] END alpha=0.5, class_prior=None, fit_prior=False;, score=0.933 total time=  10.1s\n",
+      "[CV 1/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=   6.7s\n",
+      "[CV 1/5] END alpha=1.0, class_prior=None, fit_prior=False;, score=0.925 total time=  10.2s\n",
+      "[CV 4/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.933 total time=   9.0s\n",
+      "[CV 3/5] END alpha=10.0, class_prior=None, fit_prior=True;, score=0.926 total time=   8.9s\n",
+      "[CV 1/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.922 total time=  10.5s\n",
+      "[CV 2/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.923 total time=   5.7s\n",
+      "[CV 5/5] END alpha=0.01, class_prior=None, fit_prior=True;, score=0.928 total time=  12.9s\n",
+      "[CV 4/5] END alpha=0.01, class_prior=None, fit_prior=False;, score=0.931 total time=   2.8s\n",
+      "[CV 2/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=False;, score=0.924 total time=  10.1s\n",
+      "[CV 1/5] END alpha=0.1, class_prior=None, fit_prior=False;, score=0.925 total time=  10.0s\n",
+      "[CV 3/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=True;, score=0.932 total time=  11.8s\n",
+      "[CV 2/5] END alpha=0.5, class_prior=None, fit_prior=True;, score=0.924 total time=  11.8s\n",
+      "[CV 5/5] END alpha=0.5, class_prior=None, fit_prior=False;, score=0.931 total time=   8.0s\n",
+      "[CV 3/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=False;, score=0.933 total time=   5.4s\n",
+      "[CV 3/5] END alpha=1.0, class_prior=None, fit_prior=True;, score=0.932 total time=  11.3s\n",
+      "[CV 3/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.932 total time=   6.8s\n",
+      "[CV 1/5] END alpha=10.0, class_prior=None, fit_prior=True;, score=0.923 total time=  11.1s\n",
+      "[CV 5/5] END alpha=10.0, class_prior=None, fit_prior=False;, score=0.922 total time=  12.3s\n",
+      "[CV 4/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.930 total time=   4.2s\n",
+      "[CV 3/5] END alpha=0.01, class_prior=None, fit_prior=True;, score=0.932 total time=  14.3s\n",
+      "[CV 5/5] END alpha=0.01, class_prior=[0.1, 0.1], fit_prior=True;, score=0.930 total time=  10.0s\n",
+      "[CV 3/5] END alpha=0.1, class_prior=None, fit_prior=True;, score=0.932 total time=   9.9s\n",
+      "[CV 4/5] END alpha=0.1, class_prior=None, fit_prior=False;, score=0.932 total time=  10.0s\n",
+      "[CV 1/5] END alpha=0.1, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=   8.4s\n",
+      "[CV 4/5] END alpha=0.5, class_prior=None, fit_prior=True;, score=0.932 total time=  10.4s\n",
+      "[CV 3/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=True;, score=0.933 total time=   7.4s\n",
+      "[CV 4/5] END alpha=0.5, class_prior=[0.1, 0.1], fit_prior=False;, score=0.933 total time=   8.2s\n",
+      "[CV 2/5] END alpha=1.0, class_prior=None, fit_prior=False;, score=0.925 total time=  10.9s\n",
+      "[CV 2/5] END alpha=1.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.925 total time=   9.8s\n",
+      "[CV 2/5] END alpha=10.0, class_prior=None, fit_prior=False;, score=0.923 total time=   9.4s\n",
+      "[CV 2/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=True;, score=0.923 total time=   7.6s\n",
+      "[CV 5/5] END alpha=10.0, class_prior=[0.1, 0.1], fit_prior=False;, score=0.922 total time=   3.1s\n"
+     ]
+    }
+   ],
+   "source": [
+    "pickle.dump(model,open('multinom_nbayes_kaggle44K','wb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    " 400 GET /api/contents/AAI%20-%20501%20%3A%20Introduction%20to%20AI/multinom_nbayes_kaggle44K?\n",
+    "    type=file&format=text&_=1680284886994 (::1) 3.070000ms referer=http://localhost:8888/edit/AAI%20-%20501%\n",
+    "            20%3A%20Introduction%20to%20AI/multinom_nbayes_kaggle44K\n",
+    "            \n",
+    "             400 GET /api/contents/AAI%20-%20501%20%3A%20Introduction%20to%20AI/multinom_nbayes_kaggle44K?type=file&format=text&_=1680284886994 (::1) 3.070000ms referer=http://localhost:8888/edit/AAI%20-%20501%20%3A%20Introduction%20to%20AI/multinom_nbayes_kaggle44K\n",
+    "            "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "provenance": []
+  },
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
